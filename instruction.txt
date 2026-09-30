@@ -1,0 +1,10 @@
+Username	        Password	            Notes
+human_one	        correct-horse-battery	I registered it through the UI. It has a seat at the "Micro 10/20" table and its wallet is a bit under 10,000.
+bot_ada, bot_linus	bot-password-123	    Created by npm run bots. They are meant for the bot script, but you can log in as them.
+
+To play: 
+    - docker compose up -d postgres
+    - npm run dev:server
+    - npm run dev:web
+    - npm run bots -- 2
+    - open http://localhost:5173.

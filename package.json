@@ -1,0 +1,25 @@
+{
+  "name": "holdem",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @holdem/poker-engine -w @holdem/shared && npm run build -w @holdem/server -w @holdem/web",
+    "typecheck": "npm run build && npm run typecheck --workspaces --if-present",
+    "test": "npm run build && npm run test --workspaces --if-present",
+    "dev:server": "node --env-file=apps/server/.env apps/server/dist/main.js",
+    "dev:web": "npm run dev -w @holdem/web",
+    "bots": "node tools/bots.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "fast-check": "^4.10.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}
