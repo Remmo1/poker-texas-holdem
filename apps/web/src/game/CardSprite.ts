@@ -33,10 +33,17 @@ export class CardSprite extends Phaser.GameObjects.Container {
       scaleX: 0,
       duration: FLIP_MS,
       onComplete: () => {
+        // The card may have been removed mid-flip (e.g. its player left); drawing then would crash Phaser's loop.
+        if (!this.active) return;
         this.draw(face);
         this.scene.tweens.add({ targets: this, scaleX: 1, duration: FLIP_MS });
       },
     });
+  }
+
+  override destroy(fromScene?: boolean): void {
+    this.scene?.tweens.killTweensOf(this);
+    super.destroy(fromScene);
   }
 
   private draw(face: string | null): void {

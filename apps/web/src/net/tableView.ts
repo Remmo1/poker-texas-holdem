@@ -85,6 +85,8 @@ export interface TableView {
   /** Seq of the last event this view reflects. */
   readonly seq: number;
   readonly seats: Readonly<Record<number, SeatView>>;
+  /** Players who left during the current hand; still drawn (with their result) until the next hand starts. */
+  readonly departed: Readonly<Record<number, SeatView>>;
   readonly hand: HandView | null;
   readonly mySeat: number | null;
   readonly myCards: HoleCards | null;
@@ -127,6 +129,7 @@ export function viewFromSnapshot(snapshot: TableSnapshot, seq: number): TableVie
     },
     seq,
     seats,
+    departed: {},
     hand: h && {
       handId: h.handId,
       handNo: h.handNo,
@@ -163,6 +166,11 @@ export function checkSequence(view: TableView, seq: number): SequenceCheck {
   return seq === view.seq + 1 ? 'apply' : 'gap';
 }
 
+function withoutSeat<T>(seats: Readonly<Record<number, T>>, seat: number): Record<number, T> {
+  const { [seat]: _removed, ...rest } = seats;
+  return rest;
+}
+
 function updateSeat(view: TableView, seat: number, update: (s: SeatView) => SeatView): TableView {
   const current = view.seats[seat];
   return current ? { ...view, seats: { ...view.seats, [seat]: update(current) } } : view;
@@ -190,13 +198,25 @@ function reduce(view: TableView, event: TableEvent, myUserId: string): TableView
         bet: 0n,
         hasCards: false,
       };
-      return { ...view, seats: { ...view.seats, [p.seat]: seat }, mySeat: p.userId === myUserId ? p.seat : view.mySeat };
+      return {
+        ...view,
+        seats: { ...view.seats, [p.seat]: seat },
+        departed: withoutSeat(view.departed, p.seat),
+        mySeat: p.userId === myUserId ? p.seat : view.mySeat,
+      };
     }
 
     case 'player.left': {
-      const { [event.payload.seat]: _removed, ...seats } = view.seats;
+      const leaving = view.seats[event.payload.seat];
       const mine = event.payload.userId === myUserId;
-      return { ...view, seats, mySeat: mine ? null : view.mySeat, myCards: mine ? null : view.myCards };
+      return {
+        ...view,
+        seats: withoutSeat(view.seats, event.payload.seat),
+        // A player who was dealt in stays on screen so the showdown and their final stack are not cut short.
+        departed: leaving?.hasCards ? { ...view.departed, [leaving.seat]: leaving } : view.departed,
+        mySeat: mine ? null : view.mySeat,
+        myCards: mine ? null : view.myCards,
+      };
     }
 
     case 'hand.started': {
@@ -213,6 +233,7 @@ function reduce(view: TableView, event: TableEvent, myUserId: string): TableView
       return {
         ...view,
         seats,
+        departed: {},
         myCards: null,
         hand: {
           handId: p.handId,

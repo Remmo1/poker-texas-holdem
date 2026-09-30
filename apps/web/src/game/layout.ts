@@ -1,7 +1,7 @@
-export const WORLD = { width: 1280, height: 720 } as const;
+export const WORLD = { width: 1440, height: 720 } as const;
 
-const TABLE_CENTER = { x: 640, y: 320 } as const;
-const SEAT_RING = { rx: 500, ry: 250 } as const;
+const TABLE_CENTER = { x: 720, y: 320 } as const;
+const SEAT_RING = { rx: 590, ry: 250 } as const;
 
 export interface Point {
   readonly x: number;
@@ -11,7 +11,7 @@ export interface Point {
 export const center: Point = TABLE_CENTER;
 
 /** The felt, slightly inside the seat ring. */
-export const FELT = { x: TABLE_CENTER.x, y: TABLE_CENTER.y, rx: 430, ry: 205 } as const;
+export const FELT = { x: TABLE_CENTER.x, y: TABLE_CENTER.y, rx: 500, ry: 205 } as const;
 
 export const SEAT_PANEL = { width: 160, height: 58 } as const;
 export const BOARD_CARD = { width: 62, height: 88, gap: 12 } as const;
@@ -30,8 +30,15 @@ export function seatPosition(seat: number, maxSeats: number, anchorSeat: number)
 
 const lerp = (a: Point, b: Point, t: number): Point => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 
-/** Where a seat's chips for the current round sit: far enough toward the pot to clear the seat's own cards. */
-export const betPosition = (seat: Point): Point => lerp(seat, TABLE_CENTER, 0.6);
+/**
+ * Where a seat's chips for the current round sit. Top and bottom seats push them toward the pot to clear
+ * their own cards; side seats keep them beside the panel so they never land under the board.
+ */
+export function betPosition(seat: Point): Point {
+  if (Math.abs(seat.x - TABLE_CENTER.x) < 150) return lerp(seat, TABLE_CENTER, 0.6);
+  const side = seat.x < TABLE_CENTER.x ? 1 : -1;
+  return { x: seat.x + side * (SEAT_PANEL.width / 2 + 100), y: seat.y + (TABLE_CENTER.y - seat.y) * 0.25 };
+}
 
 /** Beside the seat panel, on the side facing the table, so it never covers cards or chips. */
 export function dealerButtonPosition(seat: Point): Point {

@@ -167,6 +167,33 @@ describe('lastResult', () => {
   });
 });
 
+describe('players who leave mid-hand', () => {
+  const script = headsUpHand(['x'], 's', 'c');
+
+  it('stay on screen with their result until the next hand starts', () => {
+    const ended = play(empty(), script);
+    const left = applyTableEvent(ended, event(16, 'player.left', { seat: 1, userId: BOB.userId }) as TableEvent, ALICE.userId);
+    expect(Object.keys(left.seats)).toEqual(['0']);
+    expect(left.departed[1]).toMatchObject({ username: 'bob', stack: 980n });
+
+    const started = script[2] as unknown as { payload: object };
+    const next = applyTableEvent(left, event(17, 'hand.started', { ...started.payload, handId: 'h2', handNo: 2 }) as TableEvent, ALICE.userId);
+    expect(next.departed).toEqual({});
+  });
+
+  it('are not kept when they were never dealt in, and a new player takes over the seat', () => {
+    const seatedOnly = play(empty(), script.slice(0, 2));
+    const left = applyTableEvent(seatedOnly, event(3, 'player.left', { seat: 1, userId: BOB.userId }) as TableEvent, ALICE.userId);
+    expect(left.departed).toEqual({});
+
+    const ended = play(empty(), script);
+    const gone = applyTableEvent(ended, event(16, 'player.left', { seat: 1, userId: BOB.userId }) as TableEvent, ALICE.userId);
+    const replaced = applyTableEvent(gone, event(17, 'player.seated', { seat: 1, userId: 'u-new', username: 'newbie', stack: '500' }) as TableEvent, ALICE.userId);
+    expect(replaced.departed).toEqual({});
+    expect(replaced.seats[1]?.username).toBe('newbie');
+  });
+});
+
 describe('checkSequence', () => {
   it('accepts the next event, ignores repeats and flags gaps', () => {
     const view = viewFromSnapshot(snapshot(), 10);

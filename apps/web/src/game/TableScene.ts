@@ -38,7 +38,7 @@ export class TableScene extends Phaser.Scene {
 
   create(): void {
     this.drawFelt();
-    this.dynamic = this.add.container(0, 0);
+    this.dynamic = this.add.container(0, 0).setDepth(3); // above the cards, so chip amounts are never hidden
     this.timerBar = this.add.graphics().setDepth(5);
     this.ready = true;
     this.render();
@@ -99,13 +99,14 @@ export class TableScene extends Phaser.Scene {
     }
 
     const border = seat.isToAct ? COLORS.toAct : seat.isMe ? COLORS.me : COLORS.border;
-    const dim = seat.status === 'folded' || seat.status === 'waiting' ? 0.6 : 1;
+    const dim = seat.departed || seat.status === 'folded' || seat.status === 'waiting' ? 0.6 : 1;
     g.fillStyle(COLORS.panel, dim).fillRoundedRect(x - width / 2, y - height / 2, width, height, 12);
     g.lineStyle(seat.isToAct ? 4 : 2, border, 1).strokeRoundedRect(x - width / 2, y - height / 2, width, height, 12);
 
     this.text(x, y - 11, seat.name, 15, seat.isMe ? '#a7f3d0' : '#e5e7eb', true).setAlpha(dim);
     this.text(x, y + 11, seat.status === 'allin' ? `${seat.stack} · ALL-IN` : seat.stack, 15, '#fcd34d').setAlpha(dim);
-    if (seat.status === 'folded') this.text(x, y + height / 2 + 12, 'Folded', 12, '#9ca3af');
+    if (seat.departed) this.text(x, y + height / 2 + 12, 'Left the table', 12, '#9ca3af');
+    else if (seat.status === 'folded') this.text(x, y + height / 2 + 12, 'Folded', 12, '#9ca3af');
     if (seat.handName) this.text(x, y + height / 2 + 14, seat.handName, 13, '#fde68a', true);
 
     if (seat.bet) {

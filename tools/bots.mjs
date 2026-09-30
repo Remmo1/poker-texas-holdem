@@ -1,7 +1,10 @@
 // Seats a few scripted players at the first table so the UI has someone to play against.
-// Usage: node tools/bots.mjs [count=2] [--server=http://localhost:3000]
+// Usage: node tools/bots.mjs [count=2] [--server=http://localhost:3000] [--buyin=1000] [--aggro]
+// --aggro makes the bots shove often, so stacks run out quickly (handy for testing busting out).
 const server = process.argv.find((a) => a.startsWith('--server='))?.slice(9) ?? 'http://localhost:3000';
 const count = Number(process.argv.find((a) => /^\d+$/.test(a)) ?? 2);
+const buyIn = process.argv.find((a) => a.startsWith('--buyin='))?.slice(8) ?? '1000';
+const aggro = process.argv.includes('--aggro');
 const PASSWORD = 'bot-password-123';
 const NAMES = ['bot_ada', 'bot_linus', 'bot_grace', 'bot_alan', 'bot_edsger'];
 
@@ -25,6 +28,7 @@ async function signIn(name) {
 
 function chooseAction(legal) {
   const roll = Math.random();
+  if (aggro && legal.raise && roll < 0.35) return { type: 'allin' };
   if (legal.canCheck) {
     if (legal.raise && roll < 0.2) return { type: legal.raise.kind, to: legal.raise.min };
     return { type: 'check' };
@@ -42,7 +46,7 @@ async function runBot(name, seat, tableId) {
   let handId = '';
   let userId = '';
   const send = (type, payload) => socket.send(JSON.stringify({ v: 1, id: `b${++counter}`, type, payload }));
-  const sit = () => send('table.sit', { tableId, seat, buyIn: '1000' });
+  const sit = () => send('table.sit', { tableId, seat, buyIn });
 
   socket.addEventListener('open', () => send('auth.hello', { ticket }));
   socket.addEventListener('close', () => {

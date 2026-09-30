@@ -27,6 +27,8 @@ export interface SeatPlan {
   readonly name: string;
   readonly stack: string;
   readonly status: 'empty' | 'waiting' | 'active' | 'folded' | 'allin';
+  /** The player left during this hand; the seat shows their result until the next hand. */
+  readonly departed: boolean;
   readonly isMe: boolean;
   readonly isToAct: boolean;
   readonly clickable: boolean;
@@ -67,7 +69,8 @@ export function planTable({ view, canSit }: RenderModel): TablePlan {
 
   for (let index = 0; index < view.config.maxSeats; index++) {
     const position = seatPosition(index, view.config.maxSeats, anchor);
-    const occupant = view.seats[index];
+    const departed = view.seats[index] === undefined && view.departed[index] !== undefined;
+    const occupant = view.seats[index] ?? view.departed[index];
     const isMe = index === view.mySeat;
     const reveal = hand?.reveals[index];
     const awards = hand?.awards.filter((a) => a.seat === index) ?? [];
@@ -79,6 +82,7 @@ export function planTable({ view, canSit }: RenderModel): TablePlan {
       name: occupant?.username ?? '',
       stack: occupant ? formatChips(occupant.stack) : '',
       status: occupant?.status ?? 'empty',
+      departed,
       isMe,
       isToAct: hand?.toAct === index,
       clickable: occupant === undefined && canSit,

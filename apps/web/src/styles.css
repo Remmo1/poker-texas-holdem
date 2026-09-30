@@ -160,7 +160,7 @@ kbd {
 
 /* Table */
 .table-page {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 1rem 1rem;
   display: grid;
@@ -168,7 +168,7 @@ kbd {
 }
 .canvas {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2 / 1;
   max-height: calc(100vh - 210px);
   min-height: 260px;
   border-radius: 14px;

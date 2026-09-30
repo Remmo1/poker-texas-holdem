@@ -4,7 +4,7 @@ import { center } from '../src/game/layout';
 import { planTable } from '../src/game/plan';
 import { applyTableEvent, viewFromSnapshot } from '../src/net/tableView';
 import type { TableView } from '../src/net/tableView';
-import { ALICE, headsUpHand, snapshot } from './support/messages';
+import { ALICE, event, headsUpHand, snapshot } from './support/messages';
 
 const at = (count: number, viewerUserId = ALICE.userId): TableView =>
   headsUpHand(['x'], 's', 'c')
@@ -70,6 +70,13 @@ describe('planTable', () => {
     const before = keys(at(11));
     const after = keys(at(12));
     expect(after.filter((k) => !before.includes(k))).toEqual(['h1:board:0', 'h1:board:1', 'h1:board:2']);
+  });
+
+  it('keeps drawing a player who left after the hand, cards included, marked as departed', () => {
+    const left = applyTableEvent(at(15), event(16, 'player.left', { seat: 1, userId: 'u-bob' }) as TableEvent, ALICE.userId);
+    const plan = planTable({ view: left, canSit: false });
+    expect(plan.seats.find((s) => s.seat === 1)).toMatchObject({ occupied: true, departed: true, name: 'bob', clickable: false });
+    expect(plan.cards.find((c) => c.key === 'h1:seat-1:0')?.face).toBe('Kd');
   });
 
   it('announces winnings on the seat', () => {
